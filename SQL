@@ -1,0 +1,369 @@
+-- SET UNUSED statement 
+create table vendors
+(vendor_id number(20),
+vendor_name varchar2(25),
+contact_name varchar2(20))
+
+insert into vendors
+(vendor_id, vendor_name, contact_name)
+values
+(100,'ABC', 'Mark')
+
+insert into vendors
+(vendor_id, vendor_name, contact_name)
+values
+(110,'DEF', 'Alex')
+
+select * from vendors
+
+alter table vendors
+set unused column vendor_name --vendor_name column is marked as unused
+
+describe vendors
+
+alter table vendors
+drop unused columns-- it is used for only dropping the unused columns
+
+alter table vendors
+drop column vendor_id
+
+select * from vendors
+
+describe vendors
+
+-- Demonstration of CTAS (Create Table as Select)
+create table copyofdeptts
+
+-- to create personnel table with dept_id, we need to firstcreate a table
+-- that has dept_id as a primary key
+CREATE TABLE dept (
+    id     NUMBER(7),
+    name   VARCHAR2(25),
+    CONSTRAINT dept_id_pk PRIMARY KEY ( id )
+)
+
+DESCRIBE dept 
+
+--create personnel table with dept_id (from dept table) as FK
+
+CREATE TABLE personnel (
+    id           NUMBER(7),
+    last_name    VARCHAR2(25),
+    first_name   VARCHAR2(25),
+    dept_id      NUMBER(7),
+    CONSTRAINT dept_id_fk FOREIGN KEY ( dept_id )
+        REFERENCES dept ( id )
+)
+
+DESCRIBE personnel
+
+ALTER TABLE PERSONNEL ADD (
+    incentive NUMBER(2, 2)
+)
+
+DESCRIBE personnel
+
+ALTER TABLE personnel MODIFY (
+    last_name VARCHAR2(35)
+)
+
+DESCRIBE personnel
+
+ALTER TABLE personnel DROP COLUMN last_name
+
+DESCRIBE personnel
+
+CREATE TABLE personnel2 (
+    id           NUMBER(7),
+    first_name   VARCHAR2(25),
+    last_name    VARCHAR2(25),
+    salary       NUMBER(7, 2),
+    dept_id      NUMBER(7),
+    CONSTRAINT personnel2_dept_id_fk FOREIGN KEY ( dept_id )
+        REFERENCES dept ( id )
+)
+
+describe personnel2
+
+drop table personnel2
+
+CREATE TABLE personnel2 (
+    id           NUMBER(7),
+    first_name   VARCHAR2(25),
+    last_name    VARCHAR2(25),
+    salary       NUMBER(7, 2),
+    dept_id      NUMBER(7),
+    CONSTRAINT personnel2_dept_id_fk FOREIGN KEY ( dept_id )
+        REFERENCES dept ( id )
+)
+
+describe personnel2
+
+ALTER TABLE personnel2 DROP COLUMN first_name
+
+DESCRIBE personnel2
+
+DESCRIBE personnel
+
+ALTER TABLE personnel MODIFY (
+    first_name VARCHAR2(35)
+)
+
+DESCRIBE personnel
+
+ALTER TABLE personnel DROP COLUMN incentive
+
+DESCRIBE personnel
+
+drop table personnel
+
+describe personnel
+
+drop TABLE personnel2
+
+describe personnel2
+as select * from hr.departments
+
+select * from copyofdeptts
+
+create table copydep2
+as select department_id, department_name
+from hr.departments
+
+select * from copydep2
+
+describe copydep2
+
+-- how to mark the table as read only
+alter table copydep2 read only --users can never perform DDL's and DML's on read write tables
+
+alter table copydep2 read write --users can perform DDL's and DML's on read write tables
+
+drop table copydep2
+
+drop table copyofdeptts
+
+-- PURGE is a (DDL) statement
+
+----- DML STATMENTS ------
+-- commit/rollback are TCL/DCL statements
+
+drop table vendors
+
+create table vendors
+(vendor_id number(20),
+vendor_name varchar2(25),
+contact_name varchar2(20))
+
+insert into vendors
+(vendor_id, vendor_name, contact_name)
+values
+(100,'ABC', 'Mark')
+
+-- Still the TX is not finalized because we didn't execute any commit or rollback
+-- either do a commit and finalize your changes, or do a rollback, means the inserted
+-- data will be discarded
+rollback -- now the changes has been undone
+
+insert into vendors
+(vendor_id, vendor_name, contact_name)
+values
+(100,'ABC', 'Mark')
+commit -- now data is committed permanently (Saved permanently)
+
+--Demonstration of insert statement
+create table copyofjobs as
+select * from hr.jobs
+
+    INSERT INTO copyofjobs (
+        job_id,
+        job_title,
+        min_salary,
+        max_salary
+    ) VALUES (
+        'AD CEO',
+        'Chief Executive',
+        50000,
+        90000
+    ) -- a row of data is added
+
+commit
+
+select * from copyofjobs
+
+--INserting rows with null values
+  --Implicit method to insert a null value by just omitting a column from the coulmn list
+insert into copyofjobs(job_id, job_title, min_salary)
+  values('HR MGR', 'MANAGER', 15000)
+  
+select * from copyofjobs
+
+  --Explicit method: we have to specify the NULL keyword in the values clause.
+insert into copyofjobs(job_id, job_title, min_salary, max_salary)
+values('PROD MGR', 'Prod Manager', NULL, NULL)
+commit
+select * from copyofjobs
+
+--Inserting the date value
+create table copyemp
+as select * from hr.employees
+
+select * from copyemp
+
+-- omitting the column list is not recommended/ not a good practice
+insert into copyemp --column list is ommitted, but the ordinal position should be the same as data of columns in the table
+values(300, 'Jason', 'King', 'ABC', '666.777.6565', CURRENT_DATE, 'HR_MGR', 10000, null, 600,120)
+commit
+
+create table sales
+(id number(10),
+name varchar2(20),
+sal number(20),
+comm number(20))
+
+--insert/copy rows from an existing table
+insert into sales(id, name, sal, comm)
+select employee_id, first_name, salary, commission_pct
+from hr.employees
+
+select * from sales
+
+
+create table sales1
+(id number(10),
+name varchar2(20),
+sal number(20),
+comm number(20))
+
+
+insert into sales1(id, name, sal, comm)
+select employee_id, first_name, salary, commission_pct
+from hr.employees
+where department_id = 100
+
+select * from sales1
+
+create table copydep
+as select * from hr.departments
+
+select * from copydep
+
+insert into copydep(department_id, department_name, manager_id, location_id)
+values(280, 'Operations', 110, 76)
+
+insert into copydep(department_id, department_name, manager_id, location_id)
+values(290, 'Manufactuering', 111, 77)
+
+commit
+
+select * from copydep
+
+
+create table copydep1
+as select * from hr.departments
+
+-- inserting multiple rows in one statments
+insert all
+into copydep1(department_id, department_name, manager_id, location_id) values(114,'OP',49, 22)
+into copydep1(department_id, department_name, manager_id, location_id) values(115,'HR',50, 23)
+into copydep1(department_id, department_name, manager_id, location_id) values(116,'PROD',51, 24)
+select 1 from dual  
+
+
+-- creating a view
+create view vemployees
+as select * from hr.employees
+
+-- Author table
+create table AUTHOR
+(Author_ID varchar2(255),
+Author_Name varchar2(255),
+constraint Author_ID_PK primary key (Author_ID))
+
+describe AUTHOR
+
+-- Publisher table
+create table PUBLISHER
+(Publisher_ID varchar2(255),
+Publisher_Name varchar2(255),
+constraint Publisher_ID_PK primary key (Publisher_ID))
+
+describe PUBLISHER
+
+-- BOOKS table
+create table BOOKS
+(Book_ID varchar2(255),
+Book_Name varchar2(255),
+Author_ID varchar(255),
+Price number(10,2),
+Publisher_ID varchar2(255),
+constraint Book_ID_PK primary key (Book_ID),
+constraint BOOKS_AUTHOR_FK foreign key (Author_ID) references AUTHOR(Author_ID),
+constraint BOOKS_PUBLISHER_FK foreign key (Publisher_ID) references PUBLISHER(Publisher_ID))
+
+describe BOOKS
+
+-- CREDIT_CARD_DETAILS table
+create table CREDIT_CARD_DETAILS
+(Credit_Card_Number varchar2(255),
+Credit_Card_Type varchar2(255),
+Expiry_Date date,
+constraint Credit_Card_PK primary key (Credit_Card_Number))
+
+describe CREDIT_CARD_DETAILS
+
+-- CUSTOMER table
+create table CUSTOMER
+(Customer_ID varchar2(255),
+Customer_Name varchar2(255),
+Street_Address varchar2(255),
+City varchar2(255),
+Phone_Number varchar2(255),
+Credit_Card_Number varchar2(255),
+constraint Customer_ID_PK primary key (Customer_ID),
+constraint CUSTOMER_CREDIT_CARD_FK foreign key (Credit_Card_Number) references CREDIT_CARD_DETAILS(Credit_Card_Number))
+
+describe CUSTOMER
+
+-- SHIPPING_TYPE table
+create table SHIPPING_TYPE
+(Shipping_Type varchar2(255),
+Shipping_Price number(10),
+constraint Shipping_Type_PK primary key (Shipping_Type))
+
+describe SHIPPING_TYPE
+
+-- SHOPPING_CART table
+create table SHOPPING_CART
+(Shopping_Cart_ID number(10),
+Book_ID varchar2(255),
+Price number(10,2),
+Shopping_Date date,
+Quantity number(10),
+constraint Shopping_Cart_ID_PK primary key (Shopping_Cart_ID),
+constraint SHOPPING_CART_BOOKS_FK foreign key (Book_ID) references BOOKS(Book_ID))
+
+describe SHOPPING_CART
+
+-- ORDER_DETAILS table
+create table ORDER_DETAILS
+(Order_ID number(10),
+Customer_ID varchar2(255),
+Shipping_Type varchar2(255),
+Date_of_Purchase date,
+Shopping_Cart_ID number(10),
+constraint Order_ID_PK primary key (Order_ID),
+constraint Customer_ID_FK foreign key (Customer_ID) references CUSTOMER(Customer_ID),
+constraint FK_Order_details foreign key (Shipping_Type) references SHIPPING_TYPE(Shipping_Type),
+constraint Order_Details_FK foreign key (Shopping_Cart_ID) references SHOPPING_CART(Shopping_Cart_ID))
+
+describe ORDER_DETAILS
+
+-- PURCHASE_HISTORY table
+create table PURCHASE_HISTORY
+(Customer_ID varchar2(255),
+Order_ID number(10),
+constraint Pur_Hist_ORDER_DETAILS_FK foreign key (Customer_ID) references CUSTOMER(Customer_ID),
+constraint Purchase_History_CUSTOMER_FK foreign key (Order_ID) references ORDER_DETAILS(Order_ID))
+
+describe PURCHASE_HISTORY
